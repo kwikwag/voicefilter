@@ -19,8 +19,8 @@ run_with_lock(){
     )&
 }
 
-N=32 # set "N" as your CPU core number.
+N=$(( $(nproc) + 1 ))
 open_sem $N
 for f in $(find . -name "*.flac"); do
-    run_with_lock ffmpeg-normalize "$f" -ar 16000 -o "${f%.*}-norm.wav"
+    ! [ -f "${f%.*}-norm.wav" ] && run_with_lock ffmpeg-normalize "$f" -ar 16000 -o "${f%.*}-norm.wav"
 done
