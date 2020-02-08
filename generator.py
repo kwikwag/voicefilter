@@ -24,8 +24,14 @@ def vad_merge(w):
 
 
 def mix(hp, args, audio, num, s1_dvec, s1_target, s2, train):
-    srate = hp.audio.sample_rate
     dir_ = os.path.join(args.out_dir, 'train' if train else 'test')
+    dvec_text_path = formatter(dir_, hp.form.dvec, num)
+
+    # if output file already exists, skip
+    if os.path.isfile(dvec_text_path):
+        return
+
+    srate = hp.audio.sample_rate
 
     d, _ = librosa.load(s1_dvec, sr=srate)
     w1, _ = librosa.load(s1_target, sr=srate)
@@ -74,7 +80,6 @@ def mix(hp, args, audio, num, s1_dvec, s1_target, s2, train):
     torch.save(torch.from_numpy(mixed_mag), mixed_mag_path)
 
     # save selected sample as text file. d-vec will be calculated soon
-    dvec_text_path = formatter(dir_, hp.form.dvec, num)
     with open(dvec_text_path, 'w') as f:
         f.write(s1_dvec)
 
@@ -150,6 +155,6 @@ if __name__ == '__main__':
     with Pool(cpu_num) as p:
         r = list(tqdm.tqdm(p.imap(train_wrapper, arr), total=len(arr)))
 
-    arr = list(range(10**2))
+    arr = list(range(10**3))
     with Pool(cpu_num) as p:
         r = list(tqdm.tqdm(p.imap(test_wrapper, arr), total=len(arr)))
