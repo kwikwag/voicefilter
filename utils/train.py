@@ -66,7 +66,20 @@ def train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp,
 
                 # output = torch.pow(torch.clamp(output, min=0.0), hp.audio.power)
                 # target_mag = torch.pow(torch.clamp(target_mag, min=0.0), hp.audio.power)
-                loss = criterion(output, target_mag)
+                if hp.train.complex_loss_ratio > 0:
+                    # Power-law compression
+                    magnitude_loss = criterion(
+                        torch.pow(torch.abs(output), hp.audio.power), 
+                        torch.pow(torch.abs(target_mag), hp.audio.power),
+                    )
+                    complex_loss = criterion(
+                        torch.pow(torch.clamp(output, min=0.0), hp.audio.power), 
+                        torch.pow(torch.clamp(target_mag, min=0.0), hp.audio.power),
+                    )
+                    loss = magnitude_loss + complex_loss * hp.train.complex_loss_ratio
+
+                else:
+                    loss = criterion(output, target_mag)
 
                 optimizer.zero_grad()
                 loss.backward()
