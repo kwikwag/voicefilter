@@ -4,5 +4,10 @@ source_ext="${1:-wav}"
 target_ext="${2:-flac}"
 shift 2
 
-find -type f -iname "*.${source_ext}" -print0 | xargs -0 -n1 -P$(nproc) -I '{}'  sh -c \
-    'ffmpeg -loglevel error -i "${0}" "${0%.*}.'${target_ext}'"' {} \;
+temp_dir=$(mktemp -d)
+trap "rm -rf ${temp_dir}" EXIT
+
+find -type f -iname "*.${source_ext}" -print0 > ${temp_dir}/filelist
+< ${temp_dir}/filelist xargs -0 -n1 -P$(nproc) -I '{}'  sh -c \
+    'ffmpeg -loglevel panic -n -i "${0}" "${0%.*}.'${target_ext}'"; echo .' {} \; | \
+    tqdm --total=$(< ${temp_dir}/filelist tr '\0' '\n' | wc -l) > /dev/null
